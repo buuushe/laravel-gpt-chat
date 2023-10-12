@@ -9,3 +9,5 @@
 /.env
 /.phpunit.result.cache
 /data/
+.idea
+
