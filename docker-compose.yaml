@@ -1,0 +1,63 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/laravel/Dockerfile
+    container_name: laravel_gpt_chat_app
+    volumes:
+      - ./src/laravel-gpt-chat:/var/www
+      - ./docker/laravel/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      - "DB_CONNECTION=${DB_CONNECTION}"
+      - "DB_HOST=${DB_HOST}"
+      - "DB_PORT=${DB_PORT}"
+      - "DB_DATABASE=${DB_DATABASE}"
+      - "DB_USERNAME=${DB_APP_USERNAME}"
+      - "DB_PASSWORD=${DB_APP_PASSWORD}"
+    networks:
+      - laravel_gpt_chat_network
+
+  nginx:
+    image: nginx:latest
+    container_name: laravel_gpt_chat_nginx
+    volumes:
+      - ./src/laravel-gpt-chat:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "${NGINX_PORT}:80"
+    depends_on:
+      - app
+    networks:
+      - laravel_gpt_chat_network
+
+  db:
+    image: mysql:8.0
+    container_name: laravel_gpt_chat_db
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_APP_USERNAME}
+      MYSQL_PASSWORD: ${DB_APP_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - ./${DATA_DIR}/mysql:/var/lib/mysql
+    ports:
+      - "${DB_EXTERNAL_PORT}:3306"
+    networks:
+      - laravel_gpt_chat_network
+
+  redis:
+    image: redis:latest
+    container_name: laravel_gpt_chat_redis
+    volumes:
+      - ./${DATA_DIR}/redis:/data
+    networks:
+      - laravel_gpt_chat_network
+
+networks:
+  laravel_gpt_chat_network:
+    driver: bridge
+
+volumes:
+  dbdata:
